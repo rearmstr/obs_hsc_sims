@@ -21,23 +21,20 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-import lsst.pex.config
-import lsst.pipe.base
-import lsst.afw.image
-import lsst.afw.geom
-import lsst.afw.table
-import lsst.meas.extensions.bfd
-import numpy
+import lsst.pex.config as pexConfig
+import lsst.pipe.base as pipeBase
+import lsst.afw.table as afwTable
 from lsst.daf.persistence import Butler
-import lsst.meas.extensions.bfd as bfd
+import desc_old_bfd as bfd
+
 import glob
 import os
-from lsst.pipe.base import Struct, CmdLineTask, ArgumentParser, TaskRunner, TaskError
+import numpy
 import pygmmis
 
-from .processSingleEpoch import *
+from .processImage import ProcessImageConfig, ProcessImageTask
 
-class Runner(TaskRunner):
+class Runner(pipeBase.TaskRunner):
     @staticmethod
     def getTargetList(parsedCmd, **kwargs):
         parentDir = parsedCmd.input
@@ -53,57 +50,57 @@ class Runner(TaskRunner):
         parsedCmd.butler = butler
         return [ (parsedCmd.id.refList,  dict(priorRefList=idParser.refList, **kwargs))]
 
-class ProcessBfdModelPriorConfig(ProcessSingleEpochConfig):
-    invariantCovariance = lsst.pex.config.Field(
+class ProcessBfdModelPriorConfig(ProcessImageConfig):
+    invariantCovariance = pexConfig.Field(
         dtype=bool,
         default=False,
         optional=True,
         doc="will all the galaxies have the same covariance"
     )
-    numProc = lsst.pex.config.Field(
+    numProc = pexConfig.Field(
         dtype=int,
         default=1,
         optional=True,
         doc="number of processors to use"
     )
-    sampleSeed = lsst.pex.config.Field(
+    sampleSeed = pexConfig.Field(
         dtype=int,
         default=0,
         optional=True,
         doc="random seed for selecting prior galaxies"
     )
-    sampleFraction = lsst.pex.config.Field(
+    sampleFraction = pexConfig.Field(
         dtype=float,
         default=0.25,
         optional=True,
         doc="only add this fraction of galaxies from the prior files"
     )
-    covFile = lsst.pex.config.Field(
+    covFile = pexConfig.Field(
         dtype=str,
         default='./test.fits',
         optional=True,
         doc="file that contains the covariance matrices to know which to choose"
     )
-    setStar = lsst.pex.config.Field(
+    setStar = pexConfig.Field(
         dtype=bool,
         default=False,
         optional=True,
         doc="set if the object was a star"
     )
-    rerunLabel = lsst.pex.config.Field(
+    rerunLabel = pexConfig.Field(
         dtype=str,
         default='b0',
         optional=False,
         doc="label for the prior"
     )
-    generateFake = lsst.pex.config.Field(
+    generateFake = pexConfig.Field(
         dtype=bool,
         default=False,
         optional=True,
         doc="generate fake data with "
     )
 
-class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
+class ProcessBfdModelPriorTask(ProcessImageTask):
 
     ConfigClass = ProcessBfdModelPriorConfig
     _DefaultName = "processBfdModelPrior"
@@ -115,9 +112,9 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
         the model, prior, and calib objects, and the fitter subtask.
         """
 
-        ProcessSingleEpochTask.__init__(self, **kwargs)
-        #self.schema =  lsst.afw.table.Schema()
-        self.schema = lsst.afw.table.SourceTable.makeMinimalSchema()
+        ProcessImageTask.__init__(self, **kwargs)
+        #self.schema =  afwTable.Schema()
+        self.schema = afwTable.SourceTable.makeMinimalSchema()
         # Should move these into C++?
         self.flagMomKey = self.schema.addField("bfd.flags.moment", doc="flag bad input on moments",
                                                type='Flag')
@@ -133,7 +130,7 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
         self.log.info('Init')
 
     def getCovariances(self):
-        cat = lsst.afw.table.BaseCatalog.readFits(self.config.covFile)
+        cat = afwTable.BaseCatalog.readFits(self.config.covFile)
         covList = []
         for rec in cat:
             cov = rec.get('isoCov')
@@ -162,7 +159,7 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
                     self.cov = numpy.array(cat.getTable().getMetadata().getArrayDouble('COV')).reshape(6,6)
                     first=False
             except  Exception as e:
-                print 'Failed to read',e
+                print('Failed to read',e)
                 continue
             if first is False:
                 break
@@ -184,7 +181,7 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
     def prepCatalog(self, inputs):
         """Prepare the prior and return the output catalog
         """
-        outCat =  lsst.afw.table.SourceCatalog(self.schema)
+        outCat =  afwTable.SourceCatalog(self.schema)
         srcCat = inputs
 
         for srcRecord in srcCat:
@@ -208,7 +205,7 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
                 cov = src[src['bfd.flags']==False][0]['bfd.momentsCov'][0]
 
                 if ( (cov > self.varMax or cov < self.varMin) and (self.varMax > 0 and self.varMin > 0) ):
-                    print 'Flux variance not within bounds, skipping %f,%f,%f'%(cov,self.varMin,self.varMax)
+                    print('Flux variance not within bounds, skipping %f,%f,%f'%(cov,self.varMin,self.varMax))
                     continue
 
                 outCat = self.prepCatalog(src)
@@ -222,7 +219,7 @@ class ProcessBfdModelPriorTask(ProcessSingleEpochTask):
 
     @classmethod
     def _makeArgumentParser(cls):
-        parser = lsst.pipe.base.ArgumentParser(name=cls._DefaultName)
+        parser = pipeBase.ArgumentParser(name=cls._DefaultName)
         parser.add_argument("--prior_rerun", required=True, help="rerun for prior data")
         parser.add_id_argument(name="--id", datasetType="image", level="image",
                                help="data ID, e.g. --id subfield=0")
