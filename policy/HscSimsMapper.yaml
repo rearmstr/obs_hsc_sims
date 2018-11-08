@@ -33,12 +33,12 @@ datasets:
         persistable: BaseCatalog
         storage: FitsCatalogStorage
         python: lsst.afw.table.BaseCatalog
-        template: 'prior-%(field)04d.fits'
+        template: 'prior-%(field)04d_%(label)s.fits'
     pqr:
         persistable: BaseCatalog
         storage: FitsCatalogStorage
         python: lsst.afw.table.BaseCatalog
-        template: 'pqr-%(field)04d.fits'
+        template: 'pqr-%(field)04d_%(label)s.fits'
     merge_pqr:
         persistable: BaseCatalog
         storage: FitsCatalogStorage
