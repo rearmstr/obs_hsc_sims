@@ -226,7 +226,7 @@ class HscSimsMapper(dafPersist.Mapper):
         # Registries
         self.registry = self._setupRegistry("registry", "exposure", registry, policy, "registryPath",
                                             self.rootStorage, searchParents=False,
-                                            posixIfNoSql=(not parentRegistry))
+                                            posixIfNoSql=True)
         if not self.registry:
             self.registry = parentRegistry
         needCalibRegistry = policy.get('needCalibRegistry', None)
