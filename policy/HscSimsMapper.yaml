@@ -1,0 +1,161 @@
+needCalibRegistry: False
+levels:
+    image: None
+    field: "epoch"
+
+defaultLevel: "image"
+defaultSubLevels:
+    image: None
+
+images:
+    image:
+        template:    "image-%(field)04d-0.fits"
+        python:      lsst.afw.image.ImageF
+        persistable: ImageF
+        level: Epoch
+    starfield_image:
+        template:    "starfield_image-%(field)04d-0.fits"
+        python:      lsst.afw.image.ImageF
+        persistable: ImageF
+
+datasets:
+    src:
+        persistable: SourceCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.SourceCatalog
+        template: 'src-%(field)04d.fits'
+    epoch_catalog:
+        persistable: BaseCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.BaseCatalog
+        template: 'epoch_catalog-%(field)04d-0.fits'
+    prior:
+        persistable: BaseCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.BaseCatalog
+        template: 'prior-%(field)04d.fits'
+    pqr:
+        persistable: BaseCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.BaseCatalog
+        template: 'pqr-%(field)04d.fits'
+    merge_pqr:
+        persistable: BaseCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.BaseCatalog
+        template: 'merge-pqr-%(field)04d.fits'
+
+
+
+#         image = ImageDatasetDefinition(
+#             template="image-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int},
+#             ),
+#         starfield_image = ImageDatasetDefinition(
+#             template="starfield_image-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int},
+#             ),
+#         deep_image = ImageDatasetDefinition(
+#             template="deepimage-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         deep_starfield_image = ImageDatasetDefinition(
+#             template="deepstarfield_image-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         epoch_catalog = CatalogDatasetDefinition(
+#             template="epoch_catalog-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int}
+#             ),
+#         deep_epoch_catalog = CatalogDatasetDefinition(
+#             template="deepepoch_catalog-{subfield:04d}-{epoch:01d}.fits",
+#             keys={"subfield": int, "epoch": int}
+#             ),
+#         psf_library = ImageDatasetDefinition(
+#             template="psfs/psf_library_{psf_library:-02d}.fits[{psf_index:d}]",
+#             keys={"psf_file_number": int, "psf_index": long}
+#             ),
+#         psf_file = ImageDatasetDefinition(
+#             template="psfs/psf_{psf_number:-2d}.fits",
+#             keys={"psf_number": long}
+#             ),
+#         galaxy_catalog = CatalogDatasetDefinition(
+#             template="galaxy_catalog-{subfield:04d}.fits",
+#             keys={"subfield": int}
+#             ),
+#         deep_galaxy_catalog = CatalogDatasetDefinition(
+#             template="deep_galaxy_catalog-{subfield:04d}.fits",
+#             keys={"subfield": int},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         star_catalog = CatalogDatasetDefinition(
+#             template="star_catalog-{subfield:04d}.fits",
+#             keys={"subfield": int}
+#             ),
+# :        deep_star_catalog = CatalogDatasetDefinition(
+#             template="deepstar_catalog-{subfield:04d}.fits",
+#             keys={"subfield": int},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         src = CatalogDatasetDefinition(
+#             template="src-{subfield:04d}.fits",
+#             python="lsst.afw.table.SourceCatalog",
+#             keys={"subfield": int}
+#             ),
+#         test_src = CatalogDatasetDefinition(
+#             template="{test:s}/src-{subfield:04d}.fits",
+#             python="lsst.afw.table.SourceCatalog",
+#             keys={"subfield": int, "test": str}
+#             ),
+#         deep_src = CatalogDatasetDefinition(
+#             template="deepsrc-{subfield:04d}.fits",
+#             python="lsst.afw.table.SourceCatalog",
+#             keys={"subfield": int},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         shear = CatalogDatasetDefinition(
+#             template="shear.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={}
+#             ),
+#         deep_shear = CatalogDatasetDefinition(
+#             template="deep_shear.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={},
+#             ),
+#         star_index = CatalogDatasetDefinition(
+#             template="star_index-{field:04d}.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={"field": int},
+#             ),
+#         subtile_star_image = ImageDatasetDefinition(
+#             template="subtile_star_image-{field:04d}-{epoch:01d}-{tx:01d}x{ty:01d}-{sx:02d}x{sy:02d}.fits.gz",
+#             python="lsst.afw.image.ExposureF",
+#             keys={"field": int, "epoch": int, "tx": int, "ty": int, "sx": int, "sy": int},
+#             ),
+
+#         subtile_star_catalog = CatalogDatasetDefinition(
+#             template="subtile_star_catalog-{field:04d}-{epoch:01d}-{tx:01d}x{ty:01d}-{sx:02d}x{sy:02d}.fits.gz",
+#             python="lsst.afw.table.SourceCatalog",
+#             keys={"field": int, "epoch": int, "tx": int, "ty": int, "sx": int, "sy": int},
+#             ),
+#         prior = CatalogDatasetDefinition(
+#             template="prior-{subfield:04d}_{label:s}.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={"subfield": int, "label":str},
+#             ranges=dict(subfield=(1000,2000))
+#             ),
+#         pqr = CatalogDatasetDefinition(
+#             template="pqr-{subfield:04d}_{label:s}.fits",
+#             #template="pqr-{subfield:04d}.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={"subfield": int, "label":str},
+#             ),
+#         merge_pqr = CatalogDatasetDefinition(
+#             template="merge_pqr-{subfield:04d}.fits",
+#             python="lsst.afw.table.BaseCatalog",
+#             keys={"subfield": int},
+#             ),
+#         )
