@@ -45,7 +45,11 @@ except ImportError:
     spatialAvailable = False
 
 from .buildPsf import BuildControlPsfTask
-bfdAvailable = False
+bfdAvailable = True
+try:
+    import lsst.desc.old.bfd
+except ImportError:
+    bfdAvailable = False
 
 
 class ProcessImageConfig(pexConfig.Config):
@@ -77,7 +81,6 @@ class ProcessImageConfig(pexConfig.Config):
         optional=True,
         doc=("How many objects per row")
     )
-
     doDetection = pexConfig.Field(
         dtype=bool,
         default=False,
@@ -163,13 +166,13 @@ class ProcessImageConfig(pexConfig.Config):
         # self.measurement.plugins.names |= lsst.meas.extensions.multiShapelet.algorithms
         # self.measurement.plugins['classification.extendedness'].fluxRatio = 0.985
         if bfdAvailable:
-            self.measurement.plugins.names |= ["bfd.kmoment"]
-            self.measurement.plugins['bfd.kmoment'].sigma = 2
-            self.measurement.plugins['bfd.kmoment'].useRecVariance = False
-            self.measurement.plugins['bfd.kmoment'].useTableVariance = True
-            self.measurement.plugins['bfd.kmoment'].shift = True
-            self.measurement.plugins['bfd.kmoment'].wIndex = 4
-            self.measurement.plugins['bfd.kmoment'].useNoisePs = False
+            self.measurement.plugins.names |= ["bfdKMoment"]
+            self.measurement.plugins['bfdKMoment'].sigma = 2
+            self.measurement.plugins['bfdKMoment'].useRecVariance = False
+            self.measurement.plugins['bfdKMoment'].useTableVariance = True
+            self.measurement.plugins['bfdKMoment'].shift = True
+            self.measurement.plugins['bfdKMoment'].wIndex = 4
+            self.measurement.plugins['bfdKMoment'].useNoisePs = False
 
         self.detection.thresholdValue = 5
         self.detection.reEstimateBackground = False
@@ -213,7 +216,6 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
     def computeVariance(self, image):
         array = image.getArray()
         n = array.shape[0] // self.config.numPerRow
-        print(n)
         assert n * self.config.numPerRow == array.shape[0]
         mask = numpy.zeros(array.shape, dtype=bool)
         for i in range(self.config.varianceBorderWidth):
