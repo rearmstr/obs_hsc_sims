@@ -270,5 +270,3 @@ class ProcessBfdModelPriorTask(ProcessImageTask):
         else:
             prob = self.gmm.draw(int(numpy.sum(flux_sel)))
         [rec.set(self.probKey, float(p)) for rec, p in zip(outCat[flux_sel], prob)]
-
-

@@ -709,7 +709,7 @@ class HscSimsMapper(dafPersist.Mapper):
             try:
                 self.log.info("Loading Posix %s registry from %s", description, storage.root)
                 registry = dafPersist.PosixRegistry(storage.root)
-            except:
+            except Exception:
                 registry = None
 
         return registry
