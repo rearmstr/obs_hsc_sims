@@ -17,6 +17,15 @@ images:
         template:    "starfield_image-%(field)04d-0.fits"
         python:      lsst.afw.image.ImageF
         persistable: ImageF
+    deep_image:
+        template:    "deepimage-%(field)04d-0.fits"
+        python:      lsst.afw.image.ImageF
+        persistable: ImageF
+        level: Epoch
+    deep_starfield_image:
+        template:    "deepstarfield_image-%(field)04d-0.fits"
+        python:      lsst.afw.image.ImageF
+        persistable: ImageF
 
 datasets:
     src:
@@ -44,6 +53,17 @@ datasets:
         storage: FitsCatalogStorage
         python: lsst.afw.table.BaseCatalog
         template: 'merge-pqr-%(field)04d.fits'
+
+    deep_src:
+        persistable: SourceCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.SourceCatalog
+        template: 'deepsrc-%(field)04d.fits'
+    deep_epoch_catalog:
+        persistable: BaseCatalog
+        storage: FitsCatalogStorage
+        python: lsst.afw.table.BaseCatalog
+        template: 'deepepoch_catalog-%(field)04d-0.fits'
 
 
 
