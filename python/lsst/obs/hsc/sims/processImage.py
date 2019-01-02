@@ -29,17 +29,13 @@ import lsst.afw.table as afwTable
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 import lsst.afw.detection as afwDet
-from lsst.meas.algorithms import  SourceDetectionTask
+from lsst.meas.algorithms import SourceDetectionTask
 from lsst.meas.base import SingleFrameMeasurementTask
-from lsst.meas.base.pluginRegistry import PluginRegistry
-from lsst.meas.base.sfm import SingleFramePlugin
 from lsst.meas.deblender import SourceDeblendTask
 import lsst.meas.extensions.shapeHSM
 import lsst.meas.modelfit
-#import lsst.meas.extensions.multiShapelet
 import lsst.meas.extensions.photometryKron
-import os
-from lsst.afw.geom import SkyWcs, makeSkyWcs, makeCdMatrix, makeWcsPairTransform
+from lsst.afw.geom import makeSkyWcs, makeCdMatrix
 
 
 try:
@@ -48,13 +44,14 @@ try:
 except ImportError:
     spatialAvailable = False
 
-from .buildPsf import *
+from .buildPsf import BuildControlPsfTask
 bfdAvailable = False
+
 
 class ProcessImageConfig(pexConfig.Config):
     psf = pexConfig.ConfigurableField(
-        target = BuildControlPsfTask,
-        doc = "PSF determination"
+        target=BuildControlPsfTask,
+        doc="PSF determination"
     )
     measurement = pexConfig.ConfigurableField(target=SingleFrameMeasurementTask, doc="Source measurement")
     varianceBorderWidth = pexConfig.Field(
@@ -74,7 +71,7 @@ class ProcessImageConfig(pexConfig.Config):
         optional=True,
         doc=("If this is not None, then only process this many objects.")
     )
-    numPerRow =  pexConfig.Field(
+    numPerRow = pexConfig.Field(
         dtype=int,
         default=100,
         optional=True,
@@ -87,12 +84,12 @@ class ProcessImageConfig(pexConfig.Config):
         doc=("run source detection on the image")
     )
     detection = pexConfig.ConfigurableField(
-        target = SourceDetectionTask,
-        doc = "detection algorithm",
+        target=SourceDetectionTask,
+        doc="detection algorithm",
     )
     deblend = pexConfig.ConfigurableField(
-        target = SourceDeblendTask,
-        doc = "deblend algorithm",
+        target=SourceDeblendTask,
+        doc="deblend algorithm",
     )
     addGridPoints = pexConfig.Field(
         dtype=bool,
@@ -110,20 +107,20 @@ class ProcessImageConfig(pexConfig.Config):
         doc=("Write out distance to closest grid point")
     )
     correlatedNoiseFile = pexConfig.Field(
-        doc = "File that contains list of k values and power spectrum to use with correlated noise.  Still" \
+        doc="File that contains list of k values and power spectrum to use with correlated noise.  Still"
         " needs to be scaled by noise variance.  For BFD only",
-        dtype = str,
-        default = '',
+        dtype=str,
+        default='',
     )
     doCorrelatedNoise = pexConfig.Field(
-        doc = "Run with correlated noise",
-        dtype = bool,
-        default = False,
+        doc="Run with correlated noise",
+        dtype=bool,
+        default=False,
     )
     recomputeVariance = pexConfig.Field(
-        doc = "recompute Variance after deblending",
-        dtype = bool,
-        default = False,
+        doc="recompute Variance after deblending",
+        dtype=bool,
+        default=False,
     )
     addTruthCols = pexConfig.ListField(
         dtype=str,
@@ -138,38 +135,38 @@ class ProcessImageConfig(pexConfig.Config):
         doc="Prefix for truth values"
     )
     matchTruth = pexConfig.Field(
-        doc = "match the detected objects to truth",
-        dtype = bool,
-        default = False,
+        doc="match the detected objects to truth",
+        dtype=bool,
+        default=False,
     )
     matchTol = pexConfig.Field(
-        doc = "match tolerance to truth if no size information available",
-        dtype = float,
-        default = 3,
+        doc="match tolerance to truth if no size information available",
+        dtype=float,
+        default=3,
     )
     PIXEL_SCALE = pexConfig.Field(
-        doc = "pixel scale in arcsec/pixel",
-        dtype = float,
-        default = 0.168,
+        doc="pixel scale in arcsec/pixel",
+        dtype=float,
+        default=0.168,
     )
 
     def setDefaults(self):
         pexConfig.Config.setDefaults(self)
-        #self.measurement.slots.centroid = "centroid.sdss"
-        #self.measurement.slots.instFlux = None
-        #self.measurement.slots.modelFlux = "cmodel.flux"
-        #self.measurement.slots.calibFlux = None
-        #self.measurement.slots.apFlux = "flux.sinc"
-        #self.measurement.plugins.names = ["shape.sdss", "flux.sinc", "flux.psf", "shape.hsm.regauss", "flux.kron",
-                                       #"cmodel", "classification.extendedness"]
+        # self.measurement.slots.centroid = "centroid.sdss"
+        # self.measurement.slots.instFlux = None
+        # self.measurement.slots.modelFlux = "cmodel.flux"
+        # self.measurement.slots.calibFlux = None
+        # self.measurement.slots.apFlux = "flux.sinc"
+        # self.measurement.plugins.names = ["shape.sdss", "flux.sinc", "flux.psf", "shape.hsm.regauss",
+        #                                   "flux.kron", "cmodel", "classification.extendedness"]
         #                               ]
-        #self.measurement.plugins.names |= lsst.meas.extensions.multiShapelet.algorithms
-        #self.measurement.plugins['classification.extendedness'].fluxRatio = 0.985
+        # self.measurement.plugins.names |= lsst.meas.extensions.multiShapelet.algorithms
+        # self.measurement.plugins['classification.extendedness'].fluxRatio = 0.985
         if bfdAvailable:
             self.measurement.plugins.names |= ["bfd.kmoment"]
             self.measurement.plugins['bfd.kmoment'].sigma = 2
-            self.measurement.plugins['bfd.kmoment'].useRecVariance=False
-            self.measurement.plugins['bfd.kmoment'].useTableVariance=True
+            self.measurement.plugins['bfd.kmoment'].useRecVariance = False
+            self.measurement.plugins['bfd.kmoment'].useTableVariance = True
             self.measurement.plugins['bfd.kmoment'].shift = True
             self.measurement.plugins['bfd.kmoment'].wIndex = 4
             self.measurement.plugins['bfd.kmoment'].useNoisePs = False
@@ -197,14 +194,17 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
             self.makeSubtask("deblend", schema=self.schema)
             if self.config.writeGridDist:
                 self.indexKey = self.schema.addField("index", type=int, doc="grid index of galaxy")
-                self.gridDistKey = self.schema.addField("gridDist", type=float, doc="distance to nearest grid point")
+                self.gridDistKey = self.schema.addField("gridDist", type=float,
+                                                        doc="distance to nearest grid point")
 
         self.truthKeys = {}
         for key in self.config.addTruthCols:
-            self.truthKeys[key] = self.schema.addField(self.config.truthPrefix + "." + key, type=float, doc=key+"from truth catalog")
+            self.truthKeys[key] = self.schema.addField(self.config.truthPrefix + "." + key, type=float,
+                                                       doc=key+"from truth catalog")
 
         if self.config.matchTruth:
-            self.multTruthMatchKey = self.schema.addField("multTruthMatch", type='Flag', doc="multiple truth matches")
+            self.multTruthMatchKey = self.schema.addField("multTruthMatch", type='Flag',
+                                                          doc="multiple truth matches")
             self.noTruthMatchKey = self.schema.addField("noTruthMatch", type='Flag', doc="no truth matches")
 
         self.gridPositions = []
@@ -217,10 +217,10 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
         assert n * self.config.numPerRow == array.shape[0]
         mask = numpy.zeros(array.shape, dtype=bool)
         for i in range(self.config.varianceBorderWidth):
-            mask[i::n,:] = True
-            mask[:,i::n] = True
-            mask[n-i::n,:] = True
-            mask[:,n-i::n] = True
+            mask[i::n, :] = True
+            mask[:, i::n] = True
+            mask[n-i::n, :] = True
+            mask[:, n-i::n] = True
         borderPixels = array[mask]
         return numpy.std(borderPixels, dtype=numpy.float64)**2
 
@@ -228,11 +228,11 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
 
         image = dataRef.get(self.config.dataType + "image", immediate=True)
         exposure = afwImage.ExposureF(image.getBBox(afwImage.PARENT))
-        exposure.getMaskedImage().getImage().getArray()[:,:] = image.getArray()
+        exposure.getMaskedImage().getImage().getArray()[:, :] = image.getArray()
 
         variance = self.computeVariance(image)
         exposure.getMaskedImage().getVariance().set(variance)
-        self.algMetadata.set('noise_variance',variance)
+        self.algMetadata.set('noise_variance', variance)
 
         exposure.setPsf(self.psf.run(dataRef, self.config.dataType))
 
@@ -283,7 +283,7 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
             sourceRecord = sourceCat.addNew()
             sourceRecord.setId(simRecord.get(idKey))
             for key in self.config.addTruthCols:
-                if key=='star':
+                if key == 'star':
                     if simRecord.get('type') == 'star':
                         sourceRecord.set(self.truthKeys[key], 1)
                     else:
@@ -294,18 +294,18 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
             bbox = afwGeom.Box2I(position - offset, dims)
             mask = afwImage.Mask(bbox)
             mask.set(100)
-            spans = afwGeom.SpanSet.fromMask(mask,100)
+            spans = afwGeom.SpanSet.fromMask(mask, 100)
             footprint = afwDet.Footprint(spans)
             # add dummy value of 100 for peak value
             footprint.addPeak(position.getX(), position.getY(), 100)
-            self.gridPositions.append((position.getX(),position.getY()))
+            self.gridPositions.append((position.getX(), position.getY()))
             self.gridBoxes.append(bbox)
             sourceRecord.setFootprint(footprint)
 
         if self.config.doCorrelatedNoise and bfdAvailable:
             data = numpy.genfromtxt(self.config.correlatedNoiseFile)
-            sourceRecord.getTable().getMetadata().set('kData',data[:,0])
-            sourceRecord.getTable().getMetadata().set('psData',data[:,1])
+            sourceRecord.getTable().getMetadata().set('kData', data[:, 0])
+            sourceRecord.getTable().getMetadata().set('psData', data[:, 1])
 
         return sourceCat
 
@@ -334,8 +334,8 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                     peakPos = numpy.array(peakPosList)
                     tree = scipy.spatial.cKDTree(peakPos)
 
-                    for (x,y),box in zip(self.gridPositions, self.gridBoxes):
-                        dist, index = tree.query([x,y])
+                    for (x, y), box in zip(self.gridPositions, self.gridBoxes):
+                        dist, index = tree.query([x, y])
                         gridDetection = False
                         if dist < self.config.addGridDist:
                             gridDetection = True
@@ -360,12 +360,11 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                 variance = numpy.var(vals[good_mask], dtype=numpy.float64)
                 self.log.info('Computed variance after detection: %f' % variance)
                 exposure.getMaskedImage().getVariance().set(variance)
-                self.algMetadata.set('noise_variance',variance)
+                self.algMetadata.set('noise_variance', variance)
 
             self.deblend.run(exposure, sourceCat, exposure.getPsf())
 
         self.measurement.run(sourceCat, exposure)
-
 
         if self.config.doDetection:
             # Remove parents from catalog, only keeping the children
@@ -381,7 +380,7 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
 
                 # assume a square image
                 stampSize = exposure.getMaskedImage().getImage().getWidth() / self.config.numPerRow
-                for dist,src in zip(minDist, sourceCat):
+                for dist, src in zip(minDist, sourceCat):
 
                     xIndex = src.getX() // stampSize
                     yIndex = src.getY() // stampSize
@@ -392,13 +391,12 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                 if not spatialAvailable:
                     self.log.warn("Not computing distances or indexes because can't find scipy.spatial")
 
-
         if self.config.matchTruth:
 
             measPos = [(src.getX(), src.getY()) for src in sourceCat]
             measTree = scipy.spatial.KDTree(measPos)
             radii = []
-            for ii,src in enumerate(sourceCat):
+            for ii, src in enumerate(sourceCat):
                 x = src.getX()
                 y = src.getY()
 
@@ -407,7 +405,7 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                     radius = src.get('shape.sdss').getTraceRadius()
                 elif (src.get('bfd.flags') is False) or (radius > 10):
                     radius = 1./(numpy.sqrt(0.5*(src['bfd.moments'][3])/(src['bfd.moments'][0])))
-                elif radius is None or radius > 10 :
+                elif radius is None or radius > 10:
                     radius = src.get('shape.sdss.psf').getTraceRadius()
                 else:
                     radius = src.get('shape.sdss.psf').getTraceRadius()
@@ -415,7 +413,6 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                 radii.append(radius)
                 # count how many truth objects overlap this source close to center
                 indexes = self.truthTree.query_ball_point([x, y], self.config.matchTol*radius)
-                print ('radius',radius,self.config.matchTol*radius,len(indexes),'%0.2f,%0.2f'%(x,y))
                 if len(indexes) == 0:
                     src.set(self.noTruthMatchKey, True)
                 elif len(indexes) == 1:
@@ -424,22 +421,21 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                         if key == 'star':
                             obj_type = simRecord.get('type')
                             val = 0
-                            if obj_type=='star':
-                                val=1
+                            if obj_type == 'star':
+                                val = 1
                             src.set(self.truthKeys[key], val)
                             continue
                         src.set(self.truthKeys[key], simRecord.get(self.inputTruthKeys[key]))
                 else:
 
                     # For each potential truth see if this src is the closest one to it
-                    use_indexes=[]
+                    use_indexes = []
                     for index in indexes:
-                        xx,yy = (self.simCat['x'][index],self.simCat['y'][index])
-                        minDist, mindex = measTree.query([xx,yy])
+                        xx, yy = (self.simCat['x'][index], self.simCat['y'][index])
+                        minDist, mindex = measTree.query([xx, yy])
                         # This is the closest match and within a radius
-                        print(' match',minDist,mindex,radius,'cdist',numpy.sqrt((x-xx)**2+(y-yy)**2),self.simCat['flux'][index])
-                        if mindex==ii and minDist < radius*self.config.matchTol:
-                            print ('  closest',minDist,radius)
+                        if mindex == ii and minDist < radius*self.config.matchTol:
+                            print('  closest', minDist, radius)
                             use_indexes.append(index)
                         else:
                             print('  match another')
@@ -462,8 +458,8 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                             max_index = use_indexes[numpy.argmax(self.simCat['flux'][use_indexes])]
                             obj_type = self.simCat[max_index].get('type')
                             val = 0
-                            if obj_type=='star':
-                                val=1
+                            if obj_type == 'star':
+                                val = 1
                             src.set(self.truthKeys[key], val)
                             continue
                         if key == 'flux':
@@ -476,14 +472,13 @@ class ProcessImageTask(lsst.pipe.base.CmdLineTask):
                             src.set(self.truthKeys[key], numpy.sum(self.simCat['g2'][use_indexes]))
                             continue
                         val = 0
-                        for index,w in zip(use_indexes, weights):
+                        for index, w in zip(use_indexes, weights):
                             simRecord = self.simCat[index]
                             val += w*simRecord.get(self.inputTruthKeys[key])
 
                         src.set(self.truthKeys[key], val)
 
         dataRef.put(sourceCat, self.config.dataType + "src")
-
 
     @classmethod
     def _makeArgumentParser(cls):

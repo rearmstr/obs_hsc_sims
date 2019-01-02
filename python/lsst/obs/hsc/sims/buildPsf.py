@@ -21,8 +21,6 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-import numpy
-
 import lsst.daf.base
 import lsst.pex.config
 import lsst.pipe.base
@@ -31,17 +29,19 @@ import lsst.afw.image
 
 import lsst.meas.algorithms
 
+
 class BuildControlPsfConfig(lsst.pex.config.Config):
     warpKernel = lsst.pex.config.Field(
         dtype=str,
         doc="kernel to use when shifting the star image; see afw.math.makeWarpingKernel for choices",
         default="lanczos5"
-        )
+    )
     size = lsst.pex.config.Field(
         dtype=int,
         doc="size of subimage of the postage PSF stamp",
         default=64
-        )
+    )
+
 
 class BuildControlPsfTask(lsst.pipe.base.Task):
 
@@ -57,7 +57,7 @@ class BuildControlPsfTask(lsst.pipe.base.Task):
         nx = self.config.size-1
         ny = self.config.size-1
         # extract only the lower-left image
-        bbox = lsst.afw.geom.Box2I(lsst.afw.geom.Point2I(0,0), lsst.afw.geom.Extent2I(nx, ny))
+        bbox = lsst.afw.geom.Box2I(lsst.afw.geom.Point2I(0, 0), lsst.afw.geom.Extent2I(nx, ny))
         image = image[bbox].convertD()
         # shift by half a pixel in both directions, so it's centered on a pixel
         image = lsst.afw.math.offsetImage(image, -0.5, -0.5)
@@ -66,10 +66,12 @@ class BuildControlPsfTask(lsst.pipe.base.Task):
         kernel = lsst.afw.math.FixedKernel(image)
         return lsst.meas.algorithms.KernelPsf(kernel)
 
+
 class BuildVariablePsfConfig(lsst.pex.config.Config):
     determiner = lsst.meas.algorithms.psfDeterminerRegistry.makeField(
         doc="PSF determination algorithm", default="pca"
-        )
+    )
+
 
 class BuildVariablePsfTask(lsst.pipe.base.Task):
 

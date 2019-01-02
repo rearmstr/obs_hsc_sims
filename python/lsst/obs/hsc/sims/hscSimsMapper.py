@@ -20,26 +20,20 @@
 # see <http://www.lsstcorp.org/LegalNotices/>.
 #
 
-from builtins import str
 import copy
 import os
-import pyfits  # required by _makeDefectsDict until defects are written as AFW tables
-import re
 import weakref
 import lsst.daf.persistence as dafPersist
-from lsst.daf.persistence import ButlerLocation, Policy
+from lsst.daf.persistence import Policy
 from lsst.obs.base import ImageMapping, ExposureMapping, CalibrationMapping, DatasetMapping
 import lsst.daf.base as dafBase
 import lsst.afw.geom as afwGeom
 import lsst.afw.image as afwImage
 import lsst.afw.table as afwTable
 from lsst.afw.fits import readMetadata
-import lsst.afw.cameraGeom as afwCameraGeom
 import lsst.log as lsstLog
 import lsst.pex.policy as pexPolicy
 import lsst.pex.exceptions as pexExcept
-from lsst.obs.base.exposureIdInfo import ExposureIdInfo
-from lsst.obs.base.makeRawVisitInfo import MakeRawVisitInfo
 from lsst.utils import getPackageDir
 
 __all__ = ["HscSimsMapper"]
@@ -125,10 +119,10 @@ class HscSimsMapper(dafPersist.Mapper):
 
     # a class or subclass of MakeRawVisitInfo, a functor that makes an
     # lsst.afw.image.VisitInfo from the FITS metadata of a raw image
-    ##MakeRawVisitInfoClass = MakeRawVisitInfo
+    # MakeRawVisitInfoClass = MakeRawVisitInfo
 
     # a class or subclass of PupilFactory
-    ##PupilFactoryClass = afwCameraGeom.PupilFactory
+    # PupilFactoryClass = afwCameraGeom.PupilFactory
 
     def __init__(self, root=None, registry=None, calibRoot=None, calibRegistry=None,
                  provided=None, parentRegistry=None, repositoryCfg=None):
@@ -178,12 +172,12 @@ class HscSimsMapper(dafPersist.Mapper):
         if repoPolicy is not None:
             policy.update(repoPolicy)
 
-        #Don't load the default policy from obs_base
-        #defaultPolicyFile = dafPersist.Policy.defaultPolicyFile("obs_base",
+        # Don't load the default policy from obs_base
+        # defaultPolicyFile = dafPersist.Policy.defaultPolicyFile("obs_base",
         #                                                        "MapperDictionary.paf",
         #                                                        "policy")
-        #dictPolicy = dafPersist.Policy(defaultPolicyFile)
-        #policy.merge(dictPolicy)
+        # dictPolicy = dafPersist.Policy(defaultPolicyFile)
+        # policy.merge(dictPolicy)
 
         # Levels
         self.levels = dict()
@@ -250,26 +244,26 @@ class HscSimsMapper(dafPersist.Mapper):
         self._initWriteRecipes()
 
         # Camera geometry
-        ##self.cameraDataLocation = None  # path to camera geometry config file
-        ##self.camera = self._makeCamera(policy=policy, repositoryDir=repositoryDir)
+        # #self.cameraDataLocation = None  # path to camera geometry config file
+        # #self.camera = self._makeCamera(policy=policy, repositoryDir=repositoryDir)
 
         # Defect registry and root. Defects are stored with the camera and the registry is loaded from the
         # camera package, which is on the local filesystem.
-        ##self.defectRegistry = None
-        ##if 'defects' in policy:
-        ##    self.defectPath = os.path.join(repositoryDir, policy['defects'])
-        ##    defectRegistryLocation = os.path.join(self.defectPath, "defectRegistry.sqlite3")
-        ##    self.defectRegistry = dafPersist.Registry.create(defectRegistryLocation)
+        # #self.defectRegistry = None
+        # #if 'defects' in policy:
+        # #    self.defectPath = os.path.join(repositoryDir, policy['defects'])
+        # #    defectRegistryLocation = os.path.join(self.defectPath, "defectRegistry.sqlite3")
+        # #    self.defectRegistry = dafPersist.Registry.create(defectRegistryLocation)
 
         # Filter translation table
         self.filters = None
 
         # verify that the class variable packageName is set before attempting
         # to instantiate an instance
-        ##if self.packageName is None:
-        ##    raise ValueError('class variable packageName must not be None')
+        # #if self.packageName is None:
+        # #    raise ValueError('class variable packageName must not be None')
 
-        ##self.makeRawVisitInfo = self.MakeRawVisitInfoClass(log=self.log)
+        # #self.makeRawVisitInfo = self.MakeRawVisitInfoClass(log=self.log)
 
     def _initMappings(self, policy, rootStorage=None, calibStorage=None, provided=None, use_default=True):
         """Initialize mappings
@@ -831,7 +825,6 @@ class HscSimsMapper(dafPersist.Mapper):
 
         return item
 
-
     def getRegistry(self):
         """Get the registry used by this mapper.
         Returns
@@ -1060,4 +1053,3 @@ def validateRecipeFitsStorage(recipes):
                     value = type(schema[key])(entry[key]) if key in entry else schema[key]
                     rr.set(prefix + "." + key, value)
     return validated
-
